@@ -8,7 +8,6 @@ CREATE TABLE tasks (
   description VARCHAR(100) NOT NULL,
   is_complete BOOLEAN NOT NULL,
   location_id INT(11) NOT NULL,
-
   FOREIGN KEY(location_id) REFERENCES locations(id) ON DELETE CASCADE
 ) ENGINE=INNODB;
 
@@ -65,9 +64,77 @@ VALUES
 INSERT INTO
   limble.logged_time(time_seconds, task_id, worker_id)
 VALUES
-  (1000000000, 1, 16),
-  (3600, 2, 16), -- 1 hour
-  (3600, 3, 16), -- 1 hour
-  (7200, 5, 20), -- 2 hours
-  (10800, 8, 19),
-  (1800, 7, 26);
+  (1000000000, 1, 1),
+  (123123, 1 , 1),
+  (1231231, 1, 1),
+  (3600, 2, 1), -- 1 hour
+  (3600, 3, 1), -- 1 hour
+  (7200, 5, 5), -- 2 hours
+  (3600, 5, 5),
+  (10800, 8, 6),
+  (1800, 5, 4);
+
+-- Testing queries
+-- By worker: Get total cost for worker across all taks and locations. Doesn't care if task finished or not
+SELECT
+  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS worker_total
+FROM
+  limble.workers AS worker
+INNER JOIN
+  limble.logged_time AS logged_time
+ON
+  worker.id = logged_time.worker_id
+WHERE
+  worker.id = 5
+GROUP BY
+  worker.id;
+
+-- By worker: total cost across all tasks and locations. Where task is complete
+SELECT
+  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total,
+  task.id,
+  worker.id,
+  worker.hourly_wage
+FROM
+  limble.workers AS worker
+INNER JOIN 
+  limble.logged_time AS logged_time
+ON
+  worker.id = logged_time.worker_id
+INNER JOIN
+  limble.tasks AS task
+ON
+  logged_time.task_id = task.id
+WHERE
+  task.is_complete = TRUE
+GROUP BY
+  worker.id, task.id;
+
+-- By locastion: the total labor costs for tasks tied to a given location. Return total by task, then need to sum it in node code
+SELECT
+  location.name,
+  location.id,
+  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total,
+  worker.id
+FROM
+  limble.locations AS location
+INNER JOIN
+  limble.tasks AS task
+ON
+  location.id = task.location_id
+INNER JOIN
+  limble.logged_time AS logged_time
+ON
+  task.id = logged_time.task_id
+LEFT JOIN
+  limble.workers as worker
+ON
+  logged_time.worker_id = worker.id
+WHERE
+  task.is_complete = TRUE
+GROUP BY
+  worker.id;
+
+-- NOTES:
+-- Completion status can be done on both of them by including `task.is_complete = true` in the where clause
+-- Can filter to a slice of ID by using a where IN `WHERE country in ('USA', 'France')
