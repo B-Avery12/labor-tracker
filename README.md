@@ -34,3 +34,40 @@ by bringing the DB container down:
 ```bash
 docker compose down
 ```
+
+## Endpoints
+
+```bash
+POST /worker
+```
+
+```bash
+POST /location
+```
+
+Each endpoint accepts the following request body
+
+```json
+{
+    "worker_ids": ["id1", "id2", "id3", ...],
+    "location_ids": ["loc 1", "loc 2", ...],
+    "is_complete": "string"
+}
+```
+
+Including `worker_ids` or `location_ids` will limit the results to those `ids` respectively. If they aren't included all workers and locations will be used to calculate total cost. `is_complete` can be `incomplete`, `complete`, or `both`. Using `incomplete` or `complete` will result in cost only being calculated for tasks that are either `incomplete` or `complete` respectively. Any other value in `is_complete` will be treated as `both`, meaning that tasks status will not affect if it's include in total cost. 
+
+Examples
+```bash
+POST /worker
+```
+with this body
+```json
+{
+    "worker_ids": ["id1"],
+    "location_ids": ["loc 1"],
+    "is_complete": "complete"
+}
+```
+
+Will return the total labor costs for for done by worker `id1` at location `loc 1` on completed tasks only
