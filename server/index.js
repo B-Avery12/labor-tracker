@@ -27,6 +27,8 @@ async function connect() {
 async function main() {
   await connect();
 
+  app.use(express.json())
+
   app.get("/", (req, res) => {
     res.send("Hello!");
   });
