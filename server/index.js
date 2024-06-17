@@ -1,6 +1,7 @@
 import express from "express";
 import * as mariadb from "mariadb";
-import workerRoute from './routes/workers.route.js'
+import workerRoute from './routes/workers.route.js';
+import locationRoute from './routes/location.route.js';
 
 const app = express();
 const port = 3000;
@@ -31,6 +32,7 @@ async function main() {
   });
 
   app.use("/worker", workerRoute);
+  app.use("/location", locationRoute);
 
   app.listen(port, "0.0.0.0", () => {
     console.info(`App listening on ${port}.`);
