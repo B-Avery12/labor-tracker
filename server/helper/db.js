@@ -46,12 +46,13 @@ export default class dbHelper {
             }
             if (locationWhereCondition !== ``) {
                 if (!isFirstCondition) {
-                    isFirstCondition = false
                     whereCondition += " AND "
                 }
+                isFirstCondition = false
                 whereCondition += locationWhereCondition
             }
             if (isCompleteCondition !== ``) {
+                console.log(isFirstCondition)
                 if (!isFirstCondition) {
                     isFirstCondition = false
                     whereCondition += " AND "
@@ -97,6 +98,65 @@ export default class dbHelper {
                 ${whereClause}
                 GROUP BY
                     worker.id;
+                `
+            
+            let dbResp = await dbConn.query(query)
+            if (dbResp.length < 1) {
+                return "no results found with the given filter"
+            }
+            return dbResp
+        } catch(error) {
+            console.log("We had an error:", error)
+            res.json(error)
+        } finally {
+            if (dbConn) dbConn.end();
+        }
+    }
+
+    async getLocationCost(whereClause) {
+        let dbConn
+        try {
+            dbConn = mariadb.createPool({
+                host: process.env["DATABASE_HOST"],
+                user: process.env["DATABASE_USER"],
+                password: process.env["DATABASE_PASSWORD"],
+                database: process.env["DATABASE_NAME"]
+            })
+
+            // BUILD an in array like before than use that
+
+            let query = `
+                SELECT
+                    subquery.locationName,
+                    loc_id,
+                    ROUND(SUM(task_total), 2) AS total_cost
+                FROM
+                    (
+                        SELECT
+                            location.name AS locationName,
+                            location.id AS loc_id,
+                            worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total,
+                            worker.id
+                        FROM
+                            limble.locations AS location
+                        INNER JOIN
+                            limble.tasks AS task
+                        ON
+                            location.id = task.location_id
+                        INNER JOIN
+                            limble.logged_time AS logged_time
+                        ON
+                            task.id = logged_time.task_id
+                        LEFT JOIN
+                            limble.workers as worker
+                        ON
+                            logged_time.worker_id = worker.id
+                        ${whereClause}
+                        GROUP BY
+                            worker.id, location.id
+                    ) AS subquery
+                GROUP BY
+                    subquery.loc_id;
                 `
             
             let dbResp = await dbConn.query(query)

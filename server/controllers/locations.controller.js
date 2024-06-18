@@ -1,6 +1,14 @@
+import dbHelper from "../helper/db.js"
+
+const db = new dbHelper();
+
 export default class locationController {
     async getLocationCost(req, res) {
-        const cost = "This is the locatio endpoint";
-        res.json({ resp: cost});
-    };    
+            let whereCondition = await db.buildWhereClause(req)
+
+            let resp = await db.getLocationCost(whereCondition)
+
+            console.log(resp)
+            res.json(resp);
+    };
 }
