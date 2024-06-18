@@ -29,14 +29,14 @@ CREATE TABLE logged_time (
 ) ENGINE=INNODB;
 
 -- Set up some dummy data to test with
-
 INSERT INTO 
   limble.locations (name)
 VALUES
   ("Salt Lake"),
   ("Lehi"),
   ("Orem"),
-  ("Eagle Mountain");
+  ("Eagle Mountain"),
+  ("Syracuse");
 
 INSERT INTO
   limble.workers (username, hourly_wage)
@@ -76,130 +76,3 @@ VALUES
   (3600, 6, 5),
   (86400, 7, 5),
   (86400, 8, 5);
-
-
--- Testing queries
--- By worker: Get total cost for worker across all taks and locations. Doesn't care if task finished or not
-SELECT
-  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS worker_total
-FROM
-  limble.workers AS worker
-INNER JOIN
-  limble.logged_time AS logged_time
-ON
-  worker.id = logged_time.worker_id
-WHERE
-  worker.id = 5
-GROUP BY
-  worker.id;
-
--- By worker: total cost across all tasks and locations. Where task is complete
-SELECT
-  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total,
-  task.id,
-  worker.id,
-  worker.hourly_wage
-FROM
-  limble.workers AS worker
-INNER JOIN 
-  limble.logged_time AS logged_time
-ON
-  worker.id = logged_time.worker_id
-INNER JOIN
-  limble.tasks AS task
-ON
-  logged_time.task_id = task.id
-WHERE
-  task.is_complete = FALSE
-  AND worker.id = 5
-GROUP BY
-  worker.id, task.id;
-
--- By locastion: the total labor costs for tasks tied to a given location. Return total by task, then need to sum it in node code
-SELECT
-  location.name,
-  location.id,
-  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total,
-  worker.id
-FROM
-  limble.locations AS location
-INNER JOIN
-  limble.tasks AS task
-ON
-  location.id = task.location_id
-INNER JOIN
-  limble.logged_time AS logged_time
-ON
-  task.id = logged_time.task_id
-LEFT JOIN
-  limble.workers as worker
-ON
-  logged_time.worker_id = worker.id
-WHERE
-  location.id = 3
-GROUP BY
-  worker.id;
-
--- NOTES:
--- Completion status can be done on both of them by including `task.is_complete = true` in the where clause
--- Can filter to a slice of ID by using a where IN `WHERE country in ('USA', 'France')
-
--- TESTING
-SELECT
-  subquery.locationName,
-  subquery.worker_id,
-  loc_id,
-  SUM(task_total) AS total_cost
-FROM
-  (
-    SELECT
-      location.name AS locationName,
-      worker.id as worker_ID,
-      location.id AS loc_id,
-      worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total,
-      worker.id
-    FROM
-      limble.locations AS location
-    INNER JOIN
-      limble.tasks AS task
-    ON
-      location.id = task.location_id
-    INNER JOIN
-      limble.logged_time AS logged_time
-    ON
-      task.id = logged_time.task_id
-    LEFT JOIN
-      limble.workers as worker
-    ON
-      logged_time.worker_id = worker.id
-    GROUP BY
-      worker.id, location.id
-  ) AS subquery
-GROUP BY
-  subquery.loc_id;
-
-
-SELECT
-  worker.username AS name,
-  worker.id AS worker_ID,
-  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total
-FROM
-  limble.locations AS location
-INNER JOIN
-  limble.tasks AS task
-ON
-  location.id = task.location_id
-INNER JOIN
-  limble.logged_time AS logged_time
-ON
-  task.id = logged_time.task_id
-LEFT JOIN
-  limble.workers as worker
-ON
-  logged_time.worker_id = worker.id
-WHERE
-  worker.id in (5,6)
-  AND task.is_complete = TRUE
-  AND location.id = 4
-GROUP BY
-  worker.id, location.id
