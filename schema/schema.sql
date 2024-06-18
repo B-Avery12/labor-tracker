@@ -72,7 +72,11 @@ VALUES
   (7200, 5, 5), -- 2 hours
   (3600, 5, 5),
   (10800, 8, 6),
-  (1800, 5, 4);
+  (1800, 5, 4),
+  (3600, 6, 5),
+  (86400, 7, 5),
+  (86400, 8, 5);
+
 
 -- Testing queries
 -- By worker: Get total cost for worker across all taks and locations. Doesn't care if task finished or not
@@ -106,7 +110,8 @@ INNER JOIN
 ON
   logged_time.task_id = task.id
 WHERE
-  task.is_complete = TRUE
+  task.is_complete = FALSE
+  AND worker.id = 5
 GROUP BY
   worker.id, task.id;
 
@@ -131,10 +136,70 @@ LEFT JOIN
 ON
   logged_time.worker_id = worker.id
 WHERE
-  task.is_complete = TRUE
+  location.id = 3
 GROUP BY
   worker.id;
 
 -- NOTES:
 -- Completion status can be done on both of them by including `task.is_complete = true` in the where clause
 -- Can filter to a slice of ID by using a where IN `WHERE country in ('USA', 'France')
+
+-- TESTING
+SELECT
+  subquery.locationName,
+  subquery.worker_id,
+  loc_id,
+  SUM(task_total) AS total_cost
+FROM
+  (
+    SELECT
+      location.name AS locationName,
+      worker.id as worker_ID,
+      location.id AS loc_id,
+      worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total,
+      worker.id
+    FROM
+      limble.locations AS location
+    INNER JOIN
+      limble.tasks AS task
+    ON
+      location.id = task.location_id
+    INNER JOIN
+      limble.logged_time AS logged_time
+    ON
+      task.id = logged_time.task_id
+    LEFT JOIN
+      limble.workers as worker
+    ON
+      logged_time.worker_id = worker.id
+    GROUP BY
+      worker.id, location.id
+  ) AS subquery
+GROUP BY
+  subquery.loc_id;
+
+
+SELECT
+  worker.username AS name,
+  worker.id AS worker_ID,
+  worker.hourly_wage * (SUM(logged_time.time_seconds) / 3600) AS task_total
+FROM
+  limble.locations AS location
+INNER JOIN
+  limble.tasks AS task
+ON
+  location.id = task.location_id
+INNER JOIN
+  limble.logged_time AS logged_time
+ON
+  task.id = logged_time.task_id
+LEFT JOIN
+  limble.workers as worker
+ON
+  logged_time.worker_id = worker.id
+WHERE
+  worker.id in (5,6)
+  AND task.is_complete = TRUE
+  AND location.id = 4
+GROUP BY
+  worker.id, location.id
