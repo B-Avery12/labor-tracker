@@ -8,7 +8,6 @@ export default class workerController {
 
             let resp = await db.getWorkerCost(whereCondition)
 
-            console.log(resp)
             res.json(resp);
     };
 }

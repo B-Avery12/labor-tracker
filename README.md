@@ -45,7 +45,7 @@ POST /worker
 POST /location
 ```
 
-Each endpoint accepts the following request body. If no body is included `/worke` will return the total labor cost of each worker, while `/location` will return the total labor cost at each location.
+Each endpoint accepts the following request body. If no body is included `/worker` will return the total labor cost of each worker, while `/location` will return the total labor cost at each location.
 
 ```json
 {

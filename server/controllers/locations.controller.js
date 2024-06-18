@@ -8,7 +8,6 @@ export default class locationController {
 
             let resp = await db.getLocationCost(whereCondition)
 
-            console.log(resp)
             res.json(resp);
     };
 }

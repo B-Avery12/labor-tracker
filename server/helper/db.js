@@ -74,8 +74,6 @@ export default class dbHelper {
                 database: process.env["DATABASE_NAME"]
             })
 
-            // BUILD an in array like before than use that
-
             let query = `
                 SELECT
                     worker.username AS name,
@@ -106,8 +104,7 @@ export default class dbHelper {
             }
             return dbResp
         } catch(error) {
-            console.log("We had an error:", error)
-            res.json(error)
+            return error
         } finally {
             if (dbConn) dbConn.end();
         }
@@ -122,8 +119,6 @@ export default class dbHelper {
                 password: process.env["DATABASE_PASSWORD"],
                 database: process.env["DATABASE_NAME"]
             })
-
-            // BUILD an in array like before than use that
 
             let query = `
                 SELECT
@@ -165,8 +160,7 @@ export default class dbHelper {
             }
             return dbResp
         } catch(error) {
-            console.log("We had an error:", error)
-            res.json(error)
+            return error
         } finally {
             if (dbConn) dbConn.end();
         }
